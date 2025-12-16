@@ -40,6 +40,16 @@ app.use(camelCaseMiddleware);
 // Rotas - REMOVIDO '/api' para compatibilidade com frontend
 app.use('/', routes);  // ⬅️ ÚNICA ALTERAÇÃO NECESSÁRIA
 
+// Depuração: verifique se routes existe
+console.log('🔍 Routes object:', routes);
+console.log('🔍 Routes stack:', routes.stack);
+
+// Rota de teste manual
+app.post('/debug-register', (req, res) => {
+  console.log('✅ Debug route called');
+  res.json({ working: true, time: Date.now() });
+});
+
 // Health Check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
