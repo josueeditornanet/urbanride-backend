@@ -24,10 +24,22 @@ const limiter = rateLimit({
 
 // Middlewares de Segurança
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN,
-  credentials: true
-}));
+
+// Configuração CORS para lidar com requisições pré-vôo (preflight) OPTIONS
+const corsOptions = {
+  origin: [
+    process.env.CORS_ORIGIN,
+    'https://app.melevabr.com.br'  // Nova origem permitida
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200, // Para lidar com requisições OPTIONS
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors()); // Manipular requisições OPTIONS para todas as rotas
 app.use(limiter);
 
 // Body Parser
