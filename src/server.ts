@@ -37,8 +37,8 @@ app.use(express.urlencoded({ extended: true }));
 // Conversão CamelCase nas respostas
 app.use(camelCaseMiddleware);
 
-// Rotas
-app.use('/api', routes);
+// Rotas - REMOVIDO '/api' para compatibilidade com frontend
+app.use('/', routes);  // ⬅️ ÚNICA ALTERAÇÃO NECESSÁRIA
 
 // Health Check
 app.get('/health', (req, res) => {
