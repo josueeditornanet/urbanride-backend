@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: urbanride_db
+    restart: always
+    environment:
+      POSTGRES_USER: urbanride
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: urbanride_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - urbanride-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urbanride"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: urbanride_api
+    restart: always
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT}
+      DATABASE_URL: postgresql://urbanride:${DB_PASSWORD}@db:5432/urbanride_db
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - urbanride-network
+
+volumes:
+  postgres_data:
+
+networks:
+  urbanride-network:
+    driver: bridge
