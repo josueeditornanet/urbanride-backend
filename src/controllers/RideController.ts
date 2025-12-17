@@ -87,7 +87,9 @@ export class RideController {
 
       return res.status(201).json({
         success: true,
-        ride: result.rows[0]
+        data: {
+          ride: result.rows[0]
+        }
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -113,7 +115,9 @@ export class RideController {
 
       return res.json({
         success: true,
-        rides: result.rows
+        data: {
+          rides: result.rows
+        }
       });
     } catch (error) {
       throw error;
@@ -140,7 +144,9 @@ export class RideController {
       if (result.rows.length === 0) {
         return res.json({
           success: true,
-          ride: null
+          data: {
+            ride: null
+          }
         });
       }
 
@@ -155,7 +161,7 @@ export class RideController {
 
   async acceptRide(req: Request, res: Response) {
     const client = await getClient();
-    
+
     try {
       await client.query('BEGIN');
 
@@ -184,9 +190,9 @@ export class RideController {
         });
       }
 
-      // 3. Verifica saldo do motorista
+      // 3. Verifica saldo do motorista (Trava Financeira)
       const driverResult = await client.query(
-        `SELECT prepaid_credits, name, car_model, license_plate 
+        `SELECT prepaid_credits, name, car_model, license_plate
          FROM users WHERE id = $1 FOR UPDATE`,
         [req.user.id]
       );
@@ -198,14 +204,14 @@ export class RideController {
         await client.query('ROLLBACK');
         return res.status(402).json({
           success: false,
-          message: `Saldo insuficiente. Necessário: R$ ${fee.toFixed(2)}`
+          message: 'SALDO_INSUFICIENTE'
         });
       }
 
-      // 4. Atualiza a corrida
+      // 4. Atualiza a corrida com dados do snapshots
       await client.query(
-        `UPDATE rides 
-         SET status = 'ACCEPTED', 
+        `UPDATE rides
+         SET status = 'ACCEPTED',
              driver_id = $1,
              driver_name = $2,
              driver_car_model = $3,
@@ -224,7 +230,9 @@ export class RideController {
 
       return res.json({
         success: true,
-        ride: updatedRide.rows[0]
+        data: {
+          ride: updatedRide.rows[0]
+        }
       });
 
     } catch (error) {
@@ -262,13 +270,14 @@ export class RideController {
       if (data.status === 'COMPLETED' && ride.status !== 'COMPLETED') {
         const fee = ride.price * 0.10;
 
-        // Debita taxa do motorista
+        // Debita taxa do motorista (Trava Financeira - segunda cobrança)
+        // Se o saldo for insuficiente no momento da finalização, o motorista pode ficar negativo
         await client.query(
-          `UPDATE users 
+          `UPDATE users
            SET prepaid_credits = prepaid_credits - $1,
                payable_balance = payable_balance + $2
            WHERE id = $3`,
-          [fee, ride.price - fee, ride.driver_id]
+          [fee, ride.price, ride.driver_id] // O payable_balance recebe o valor total da corrida
         );
 
         // Registra transação de taxa
@@ -287,7 +296,7 @@ export class RideController {
       }
 
       // Atualiza status
-      const timestamp = data.status === 'RUNNING' ? 'started_at' : 
+      const timestamp = data.status === 'RUNNING' ? 'started_at' :
                        data.status === 'COMPLETED' ? 'completed_at' : null;
 
       let updateQuery = `UPDATE rides SET status = $1`;
@@ -306,7 +315,9 @@ export class RideController {
 
       return res.json({
         success: true,
-        ride: result.rows[0]
+        data: {
+          ride: result.rows[0]
+        }
       });
 
     } catch (error) {
@@ -344,7 +355,9 @@ export class RideController {
 
       return res.json({
         success: true,
-        ride: result.rows[0]
+        data: {
+          ride: result.rows[0]
+        }
       });
     } catch (error) {
       throw error;
@@ -382,9 +395,11 @@ export class RideController {
 
       return res.json({
         success: true,
-        ride: {
-          ...rideResult.rows[0],
-          messages: messagesResult.rows
+        data: {
+          ride: {
+            ...rideResult.rows[0],
+            messages: messagesResult.rows
+          }
         }
       });
     } catch (error) {
@@ -412,7 +427,9 @@ export class RideController {
 
       return res.status(201).json({
         success: true,
-        message: result.rows[0]
+        data: {
+          message: result.rows[0]
+        }
       });
     } catch (error) {
       throw error;

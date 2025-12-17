@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PASSENGER
+  DRIVER
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum RideStatus {
+  REQUESTED
+  ACCEPTED
+  DRIVER_ARRIVED
+  RUNNING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  PIX
+  CREDIT_CARD
+  DEBIT_CARD
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+  EARNING
+  FEE
+}
+
+model User {
+  id                  String   @id @default(uuid())
+  name                String
+  email               String   @unique
+  password_hash       String
+  role                Role
+  prepaid_credits     Float    @default(0.0)
+  payable_balance     Float    @default(0.0)
+  rating              Float?   @default(5.0)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @default(now()) @updatedAt
+
+  // Campos específicos para motoristas
+  car_model           String?
+  license_plate       String?
+  verification_status VerificationStatus? @default(UNVERIFIED)
+
+  // Documentos do motorista
+  cnh_document        String?
+  crlv_document       String?
+  profile_photo       String?
+
+  // Campos para perfis completos (progressive profiling)
+  cpf                 String?
+  phone               String?
+  birth_date          DateTime?
+
+  // Relacionamentos
+  ridesAsPassenger    Ride[]   @relation("PassengerRides")
+  ridesAsDriver       Ride[]   @relation("DriverRides")
+  transactions        Transaction[]
+  sent_messages       ChatMessage[] @relation("UserSentMessages")
+}
+
+model Ride {
+  id                      String           @id @default(uuid())
+  passenger_id            String
+  driver_id               String?
+  origin_address          String
+  destination_address     String
+  origin_lat              Float?
+  origin_lng              Float?
+  destination_lat         Float?
+  destination_lng         Float?
+  price                   Float
+  distance_km             Float
+  status                  RideStatus       @default(REQUESTED)
+  payment_method          PaymentMethod?
+  driver_name             String?
+  driver_car_model        String?
+  driver_license_plate    String?
+  cancel_reason           String?
+  created_at              DateTime         @default(now())
+  updated_at              DateTime         @default(now()) @updatedAt
+  started_at              DateTime?
+  completed_at            DateTime?
+
+  // Relacionamentos
+  passenger               User             @relation("PassengerRides", fields: [passenger_id], references: [id])
+  driver                  User?            @relation("DriverRides", fields: [driver_id], references: [id])
+  transactions            Transaction[]
+  chat_messages           ChatMessage[]
+}
+
+model Transaction {
+  id          String            @id @default(uuid())
+  user_id     String
+  ride_id     String?
+  amount      Float
+  type        TransactionType
+  description String
+  status      TransactionStatus @default(COMPLETED)
+  metadata    Json?
+  created_at  DateTime          @default(now())
+
+  // Relacionamentos
+  user        User              @relation(fields: [user_id], references: [id])
+  ride        Ride?             @relation(fields: [ride_id], references: [id])
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  ride_id    String
+  sender_id  String
+  content    String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  // Relacionamentos
+  ride       Ride     @relation(fields: [ride_id], references: [id])
+  sender     User     @relation("UserSentMessages", fields: [sender_id], references: [id])
+}

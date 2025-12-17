@@ -92,7 +92,10 @@ export class WebhookController {
 
         await client.query('COMMIT');
 
-        return res.status(200).json({ success: true });
+        return res.status(200).json({
+          success: true,
+          data: null
+        });
       } catch (error) {
         await client.query('ROLLBACK');
         throw error;

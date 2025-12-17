@@ -20,7 +20,9 @@ export class WalletController {
 
       return res.json({
         success: true,
-        transactions: result.rows
+        data: {
+          transactions: result.rows
+        }
       });
     } catch (error) {
       throw error;
@@ -52,13 +54,15 @@ export class WalletController {
 
         return res.json({
           success: true,
-          payment: {
-            qrCode: fakeQrCode,
-            qrCodeBase64: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==`,
-            copyPaste: fakeQrCode,
-            amount: data.amount,
-            transactionId: transactionResult.rows[0].id,
-            expiresAt: Date.now() + 30 * 60 * 1000 // 30 minutos
+          data: {
+            payment: {
+              qrCode: fakeQrCode,
+              qrCodeBase64: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==`,
+              copyPaste: fakeQrCode,
+              amount: data.amount,
+              transactionId: transactionResult.rows[0].id,
+              expiresAt: Date.now() + 30 * 60 * 1000 // 30 minutos
+            }
           }
         });
       } catch (error) {

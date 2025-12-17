@@ -59,7 +59,9 @@ export class DriverDocumentController {
 
       return res.json({
         success: true,
-        message: 'Documento enviado com sucesso'
+        data: {
+          message: 'Documento enviado com sucesso'
+        }
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -105,7 +107,9 @@ export class DriverDocumentController {
 
       return res.json({
         success: true,
-        message: 'Solicitação de verificação enviada com sucesso'
+        data: {
+          message: 'Solicitação de verificação enviada com sucesso'
+        }
       });
     } catch (error) {
       throw error;

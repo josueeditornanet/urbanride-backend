@@ -13,7 +13,7 @@ export const errorHandler = (
   if (err instanceof ZodError) {
     return res.status(400).json({
       success: false,
-      message: 'Dados inválidos',
+      message: err.errors[0]?.message || 'Dados inválidos',
       errors: err.errors.map(e => ({
         field: e.path.join('.'),
         message: e.message
@@ -32,8 +32,8 @@ export const errorHandler = (
   // Erro genérico
   return res.status(500).json({
     success: false,
-    message: process.env.NODE_ENV === 'production' 
-      ? 'Erro interno do servidor' 
+    message: process.env.NODE_ENV === 'production'
+      ? 'Erro interno do servidor'
       : err.message
   });
 };

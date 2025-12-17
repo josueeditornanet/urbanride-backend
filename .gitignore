@@ -67,3 +67,4 @@ Thumbs.db
 
 # Local development
 .env.local
+/src/generated/prisma

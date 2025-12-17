@@ -8,7 +8,11 @@
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
     "dev:watch": "nodemon --exec ts-node src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:pull": "prisma db pull"
   },
   "keywords": [
     "urbanride",
@@ -19,6 +23,7 @@
   "author": "UrbanRide Team",
   "license": "MIT",
   "dependencies": {
+    "@prisma/client": "^6.19.1",
     "axios": "^1.6.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -43,6 +48,7 @@
     "@types/node": "^20.19.27",
     "@types/pg": "^8.10.2",
     "nodemon": "^3.0.1",
+    "prisma": "^6.19.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   }
