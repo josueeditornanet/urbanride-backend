@@ -96,6 +96,14 @@ mapsRouter.post('/calculate-route', async (req, res) => {
       destinationCoords = destination;
     }
 
+    // Verificar se as coordenadas não são nulas antes de usar
+    if (!originCoords || !destinationCoords) {
+      return res.status(400).json({
+        success: false,
+        message: 'Não foi possível obter as coordenadas de origem ou destino'
+      });
+    }
+
     // Obter distância e duração entre os pontos
     const distanceResult = await geolocationService.getDistanceMatrix([
       `${originCoords.lat},${originCoords.lng}`
