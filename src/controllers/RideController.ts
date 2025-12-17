@@ -39,20 +39,31 @@ export class RideController {
           destinationLng = destinationGeo.lng;
         }
 
-        // Obter distância real entre os pontos (opcional)
+        // Obter distância real entre os pontos e atualizar preço proporcionalmente
         const distanceData = await geolocationService.getDistanceMatrix(
           [`${originGeo?.lat || 0},${originGeo?.lng || 0}`],
           [`${destinationGeo?.lat || 0},${destinationGeo?.lng || 0}`]
         );
 
+        let finalDistanceKm = data.distanceKm; // Valor original do frontend
+        let finalPrice = data.price; // Valor original do frontend
+
         if (distanceData && distanceData.rows && distanceData.rows[0].elements[0].status === 'OK') {
           const realDistance = distanceData.rows[0].elements[0].distance.value / 1000; // Converter para km
-          // Atualizar o preço proporcionalmente se necessário
-          // (Implementar lógica de preço baseada na distância real)
+
+          // Atualizar distância com valor real se for significativamente diferente
+          if (Math.abs(realDistance - data.distanceKm) > 2) { // Se diferença for maior que 2km
+            finalDistanceKm = realDistance;
+
+            // Recalcular preço proporcionalmente à distância real
+            // Assumindo que o preço original foi calculado com base na distância original
+            const pricePerKm = data.price / data.distanceKm; // Preço por km estimado
+            finalPrice = parseFloat((pricePerKm * realDistance).toFixed(2)); // Novo preço baseado na distância real
+          }
         }
       } catch (geoError) {
-        console.warn('⚠️ Aviso: Erro na geolocalização, continuando com coordenadas padrão:', (geoError as Error).message);
-        // Continuar com coordenadas padrão (0,0) caso a geolocalização falhe
+        console.warn('⚠️ Aviso: Erro na geolocalização, usando distância e preço fornecidos pelo frontend:', (geoError as Error).message);
+        // Continuar com dados fornecidos pelo frontend
       }
 
       const result = await query(
@@ -67,8 +78,8 @@ export class RideController {
           originLng,
           destinationLat,
           destinationLng,
-          data.price,
-          data.distanceKm,
+          finalPrice, // Usar preço calculado ou original
+          finalDistanceKm, // Usar distância calculada ou original
           data.paymentMethod
         ]
       );

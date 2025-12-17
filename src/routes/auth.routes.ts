@@ -8,5 +8,6 @@ const authController = new AuthController();
 authRoutes.post('/register', authController.register);
 authRoutes.post('/login', authController.login);
 authRoutes.get('/me', ensureAuthenticated, authController.me);
+authRoutes.put('/profile', ensureAuthenticated, authController.updateProfile);
 
 export { authRoutes };

@@ -12,11 +12,21 @@ CREATE TABLE IF NOT EXISTS users (
     rating DECIMAL(3, 2) DEFAULT 5.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Campos específicos para motoristas
     car_model VARCHAR(100),
     license_plate VARCHAR(20),
-    verification_status VARCHAR(20) DEFAULT 'PENDING' CHECK (verification_status IN ('PENDING', 'APPROVED', 'REJECTED'))
+    verification_status VARCHAR(20) DEFAULT 'PENDING' CHECK (verification_status IN ('PENDING', 'APPROVED', 'REJECTED')),
+
+    -- Documentos do motorista
+    cnh_document TEXT,
+    crlv_document TEXT,
+    profile_photo TEXT,
+
+    -- Campos para perfis completos (progressive profiling)
+    cpf VARCHAR(14),
+    phone VARCHAR(20),
+    birth_date DATE
 );
 
 -- Tabela de corridas

@@ -146,8 +146,11 @@ export class AuthController {
   async me(req: Request, res: Response) {
     try {
       const result = await query(
-        `SELECT id, name, email, role, prepaid_credits, payable_balance, 
-                rating, created_at, car_model, license_plate, verification_status 
+        `SELECT id, name, email, role, prepaid_credits, payable_balance,
+                rating, created_at, car_model, license_plate, verification_status,
+                cnh_document, crlv_document, profile_photo,
+                -- Campos opcionais para perfis completos
+                cpf, phone, birth_date
          FROM users WHERE id = $1`,
         [req.user.id]
       );
@@ -159,9 +162,127 @@ export class AuthController {
         });
       }
 
+      const user = result.rows[0];
+
+      // Formatando a resposta para bater com o formato do frontend
+      const formattedUser = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role as 'PASSENGER' | 'DRIVER',
+        prepaidCredits: user.prepaid_credits,
+        payableBalance: user.payable_balance,
+        rating: user.rating,
+        createdAt: user.created_at,
+        carModel: user.car_model,
+        licensePlate: user.license_plate,
+        verificationStatus: user.verification_status,
+        documents: {
+          cnh: user.cnh_document,
+          crlv: user.crlv_document,
+          profile: user.profile_photo
+        },
+        // Campos para perfis completos (progressive profiling)
+        cpf: user.cpf,
+        phone: user.phone,
+        birthDate: user.birth_date
+      };
+
       return res.json({
         success: true,
-        user: result.rows[0]
+        user: formattedUser
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateProfile(req: Request, res: Response) {
+    try {
+      const { name, car_model, license_plate, cpf, phone, birth_date } = req.body;
+
+      const updateFields: string[] = [];
+      const updateValues: any[] = [];
+      let paramIndex = 2; // Começa em 2 porque o primeiro parâmetro é req.user.id
+
+      if (name !== undefined) {
+        updateFields.push(`name = $${paramIndex}`);
+        updateValues.push(name);
+        paramIndex++;
+      }
+      if (car_model !== undefined) {
+        updateFields.push(`car_model = $${paramIndex}`);
+        updateValues.push(car_model);
+        paramIndex++;
+      }
+      if (license_plate !== undefined) {
+        updateFields.push(`license_plate = $${paramIndex}`);
+        updateValues.push(license_plate);
+        paramIndex++;
+      }
+      if (cpf !== undefined) {
+        updateFields.push(`cpf = $${paramIndex}`);
+        updateValues.push(cpf);
+        paramIndex++;
+      }
+      if (phone !== undefined) {
+        updateFields.push(`phone = $${paramIndex}`);
+        updateValues.push(phone);
+        paramIndex++;
+      }
+      if (birth_date !== undefined) {
+        updateFields.push(`birth_date = $${paramIndex}`);
+        updateValues.push(birth_date);
+        paramIndex++;
+      }
+
+      if (updateFields.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nenhum campo para atualizar'
+        });
+      }
+
+      updateValues.unshift(req.user.id); // Adiciona o ID do usuário como primeiro parâmetro
+
+      const queryStr = `UPDATE users SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *`;
+      const result = await query(queryStr, updateValues);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuário não encontrado'
+        });
+      }
+
+      const user = result.rows[0];
+
+      // Formatando a resposta para bater com o formato do frontend
+      const formattedUser = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role as 'PASSENGER' | 'DRIVER',
+        prepaidCredits: user.prepaid_credits,
+        payableBalance: user.payable_balance,
+        rating: user.rating,
+        createdAt: user.created_at,
+        carModel: user.car_model,
+        licensePlate: user.license_plate,
+        verificationStatus: user.verification_status,
+        documents: {
+          cnh: user.cnh_document,
+          crlv: user.crlv_document,
+          profile: user.profile_photo
+        },
+        cpf: user.cpf,
+        phone: user.phone,
+        birthDate: user.birth_date
+      };
+
+      return res.json({
+        success: true,
+        user: formattedUser
       });
     } catch (error) {
       throw error;
