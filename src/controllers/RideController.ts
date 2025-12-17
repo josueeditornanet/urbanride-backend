@@ -26,6 +26,10 @@ export class RideController {
       let destinationLat = 0;
       let destinationLng = 0;
 
+      // Variáveis para preço e distância finais
+      let finalDistanceKm = data.distanceKm; // Valor original do frontend
+      let finalPrice = data.price; // Valor original do frontend
+
       try {
         const originGeo = await geolocationService.geocodeAddress(data.origin);
         if (originGeo) {
@@ -44,9 +48,6 @@ export class RideController {
           [`${originGeo?.lat || 0},${originGeo?.lng || 0}`],
           [`${destinationGeo?.lat || 0},${destinationGeo?.lng || 0}`]
         );
-
-        let finalDistanceKm = data.distanceKm; // Valor original do frontend
-        let finalPrice = data.price; // Valor original do frontend
 
         if (distanceData && distanceData.rows && distanceData.rows[0].elements[0].status === 'OK') {
           const realDistance = distanceData.rows[0].elements[0].distance.value / 1000; // Converter para km

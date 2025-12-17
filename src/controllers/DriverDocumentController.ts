@@ -2,21 +2,12 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { query } from '../config/database';
 
-// Estendendo a interface Request para incluir o arquivo do multer
-interface CustomRequest extends Request {
-  file?: {
-    filename: string;
-    path: string;
-    // outras propriedades conforme necessário
-  };
-}
-
 const uploadDocumentSchema = z.object({
   type: z.enum(['cnh', 'crlv', 'profile'])
 });
 
 export class DriverDocumentController {
-  async uploadDocument(req: CustomRequest, res: Response) {
+  async uploadDocument(req: Request, res: Response) {
     try {
       const data = uploadDocumentSchema.parse(req.body);
 
@@ -37,7 +28,10 @@ export class DriverDocumentController {
       // como AWS S3, Google Cloud Storage, etc.
       // Por enquanto, vamos apenas simular o armazenamento
 
-      if (!req.file && !req.body.fileUrl) {
+      // Para acessar o arquivo, faremos uma verificação de tipo
+      const file = (req as any).file;
+
+      if (!file && !req.body.fileUrl) {
         return res.status(400).json({
           success: false,
           message: 'Arquivo é obrigatório'
