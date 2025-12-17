@@ -27,10 +27,7 @@ app.use(helmet());
 
 // Configuração CORS para lidar com requisições pré-vôo (preflight) OPTIONS
 const corsOptions = {
-  origin: [
-    process.env.CORS_ORIGIN,
-    'https://app.melevabr.com.br'  // Nova origem permitida
-  ],
+  origin: [process.env.CORS_ORIGIN || '', 'https://app.melevabr.com.br'],  // Nova origem permitida
   credentials: true,
   optionsSuccessStatus: 200, // Para lidar com requisições OPTIONS
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

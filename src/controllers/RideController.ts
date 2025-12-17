@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { query, getClient } from '../config/database';
+import { geolocationService } from '../config/geolocation';
 
 const requestRideSchema = z.object({
   origin: z.string().min(5),
@@ -19,11 +20,57 @@ export class RideController {
     try {
       const data = requestRideSchema.parse(req.body);
 
+      // Tentar obter coordenadas de geolocalização, mas não falhar se não for possível
+      let originLat = 0;
+      let originLng = 0;
+      let destinationLat = 0;
+      let destinationLng = 0;
+
+      try {
+        const originGeo = await geolocationService.geocodeAddress(data.origin);
+        if (originGeo) {
+          originLat = originGeo.lat;
+          originLng = originGeo.lng;
+        }
+
+        const destinationGeo = await geolocationService.geocodeAddress(data.destination);
+        if (destinationGeo) {
+          destinationLat = destinationGeo.lat;
+          destinationLng = destinationGeo.lng;
+        }
+
+        // Obter distância real entre os pontos (opcional)
+        const distanceData = await geolocationService.getDistanceMatrix(
+          [`${originGeo?.lat || 0},${originGeo?.lng || 0}`],
+          [`${destinationGeo?.lat || 0},${destinationGeo?.lng || 0}`]
+        );
+
+        if (distanceData && distanceData.rows && distanceData.rows[0].elements[0].status === 'OK') {
+          const realDistance = distanceData.rows[0].elements[0].distance.value / 1000; // Converter para km
+          // Atualizar o preço proporcionalmente se necessário
+          // (Implementar lógica de preço baseada na distância real)
+        }
+      } catch (geoError) {
+        console.warn('⚠️ Aviso: Erro na geolocalização, continuando com coordenadas padrão:', (geoError as Error).message);
+        // Continuar com coordenadas padrão (0,0) caso a geolocalização falhe
+      }
+
       const result = await query(
-        `INSERT INTO rides (passenger_id, origin_address, destination_address, price, distance_km, payment_method)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO rides (passenger_id, origin_address, destination_address, origin_lat, origin_lng, destination_lat, destination_lng, price, distance_km, payment_method)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING *`,
-        [req.user.id, data.origin, data.destination, data.price, data.distanceKm, data.paymentMethod]
+        [
+          req.user.id,
+          data.origin,
+          data.destination,
+          originLat,
+          originLng,
+          destinationLat,
+          destinationLng,
+          data.price,
+          data.distanceKm,
+          data.paymentMethod
+        ]
       );
 
       return res.status(201).json({
@@ -44,7 +91,7 @@ export class RideController {
   async getAvailable(req: Request, res: Response) {
     try {
       const result = await query(
-        `SELECT r.*, u.name as passenger_name 
+        `SELECT r.*, u.name as passenger_name
          FROM rides r
          JOIN users u ON u.id = r.passenger_id
          WHERE r.status = 'REQUESTED'
@@ -295,7 +342,13 @@ export class RideController {
   async getRide(req: Request, res: Response) {
     try {
       const rideResult = await query(
-        'SELECT * FROM rides WHERE id = $1',
+        `SELECT
+          id, passenger_id, driver_id, origin_address, destination_address,
+          origin_lat, origin_lng, destination_lat, destination_lng,
+          price, distance_km, status, payment_method, driver_name,
+          driver_car_model, driver_license_plate, cancel_reason,
+          created_at, updated_at, started_at, completed_at
+         FROM rides WHERE id = $1`,
         [req.params.id]
       );
 
@@ -307,7 +360,7 @@ export class RideController {
       }
 
       const messagesResult = await query(
-        `SELECT m.*, u.name as sender_name 
+        `SELECT m.*, u.name as sender_name
          FROM chat_messages m
          JOIN users u ON u.id = m.sender_id
          WHERE m.ride_id = $1

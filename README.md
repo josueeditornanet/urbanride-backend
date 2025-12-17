@@ -212,10 +212,40 @@ urbanride-backend/
 ## 🚀 Próximos Passos
 
 1. ✅ Implementar integração real com Mercado Pago
-2. ⏳ Adicionar Google Maps API para rotas
+2. ✅ Adicionar Google Maps API para rotas
 3. ⏳ Implementar WebSocket para chat em tempo real
 4. ⏳ Adicionar testes automatizados
 5. ⏳ Implementar CI/CD
+
+## 🗺️ Configuração do Google Maps
+
+Para utilizar os serviços de mapa, geolocalização e rotas, siga os passos abaixo:
+
+### 1. Ativar APIs necessárias no Google Cloud Console
+
+Acesse o [Google Cloud Console](https://console.cloud.google.com/) e ative as seguintes APIs:
+
+- **Maps JavaScript API**
+- **Geocoding API**
+- **Distance Matrix API**
+- **Places API (Web Service)**
+
+### 2. Configurar credenciais
+
+No painel de credenciais do Google Cloud Console:
+
+1. Crie uma chave de API
+2. Restrinja a chave para aumentar a segurança:
+   - Tipo de aplicação: HTTP(S)
+   - Ações: Permitir chamadas de HTTP(s) de qualquer lugar
+   - APIs permitidas: Selecione as APIs ativadas acima
+
+### 3. Variáveis de ambiente
+
+Configure a variável de ambiente:
+```
+GOOGLE_MAPS_API_KEY=sua_chave_aqui
+```
 
 ## 📝 Licença
 
